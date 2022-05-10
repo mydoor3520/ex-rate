@@ -1,5 +1,5 @@
 # ex-rate
-환율과 비용 api 연계 web application
+환율과 비용 web application
 
 # 환율 계산 웹앱
 
