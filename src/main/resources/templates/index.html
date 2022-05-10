@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<th:block layout:fragment="css">
+</th:block>
+<th:block>
+	<head>
+		<link rel="favicon" th:href="@{/assets/images/favicon.ico}">
+		<title> WireBarley</title>
+	</head>
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<H1>환율 계산 웹앱 비용</H1>
+			</div>
+		</div>
+	</div>
+</th:block>
+<th:block layout:fragment="script">
+	<script th:src="@{/assets/js/jquery.min.js}"></script>
+	<script th:src="@{/assets/js/bootstrap.min.js}"></script>
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+
+			// Get the input field
+			var user_id_ = document.querySelector('#loginId_');
+			var user_pswd_ = document.querySelector('#loginPw_');
+
+			// Execute a function when the user releases a key on the keyboard
+			user_id_.addEventListener('keyup', function(event) {
+			// Number 13 is the "Enter" key on the keyboard
+				if (event.keyCode === 13 && user_id_.value.length > 0) {
+					// Cancel the default action, if needed
+					event.preventDefault();
+					// Trigger the button element with a click
+					chkUserFirst();
+				}
+			});
+
+			user_pswd_.addEventListener('keyup', function(event) {
+				// Number 13 is the "Enter" key on the keyboard
+				if (event.keyCode === 13 && user_id_.value.length > 0) {
+					// Cancel the default action, if needed
+					event.preventDefault();
+					// Trigger the button element with a click
+					chkUserFirst();
+				}
+			});
+		});
+
+    </script>
+</th:block>
+</html>
