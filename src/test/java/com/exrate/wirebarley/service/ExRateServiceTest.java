@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,5 +43,15 @@ class ExRateServiceTest {
     public Map<String, Object> jsonToMap(String jsonData) throws JsonParseException, JsonMappingException, IOException {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(jsonData, Map.class);
+    }
+
+    @Test
+    @DisplayName("숫자 format 테스트")
+    public void formNumberTest(){
+        String num = "55324.3443";
+        DecimalFormat numForm = new DecimalFormat("###,###.##");
+        String result = "";
+        result = numForm.format( Float.parseFloat(num) );
+        System.out.println("format :" + result);
     }
 }

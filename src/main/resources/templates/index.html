@@ -1,16 +1,98 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <th:block layout:fragment="css">
+	<style>
+		.title-div{
+			font-weight: 800;
+		}
+		.title-div-mg-btt{
+			margin-bottom: 3rem;
+		}
+		.rst-div{
+			display:none;
+			border: 5px solid red;
+			font-weight: 600;
+			font-size: 1rem;
+		}
+		.err-div{
+			display:none;
+			color : red;
+			font-weight: 600;
+			font-size: 1rem;;
+		}
+	</style>
 </th:block>
 <th:block>
 	<head>
 		<link rel="favicon" th:href="@{/assets/images/favicon.ico}">
+		<link th:href="@{/assets/css/bootstrap.min.css}" rel="stylesheet" type="text/css">
 		<title> WireBarley</title>
 	</head>
 	<div class="container">
 		<div class="row">
-			<div class="col-md-12">
-				<H1>환율 계산 웹앱 비용</H1>
+			<div class="form-group col-12 title-div-mg-btt">
+				<h1 class="title-div">환율 계산</h1>
+			</div>
+			<div class="col-12">
+				<!-- SEND START -->
+				<div class="row">
+					<label class="col-2">송금국가:</label>
+					<div class="col-6">
+						<select class="form-select form-select-lg" id="sourceSelected" onchange="getExRate();">
+							<option value="USD" selected="selected" onchange>미국(USD)</option>
+							<option value="AUD" >호주(AUD)</option>
+						</select>
+					</div>
+				</div>
+				<!-- SEND END -->
+
+				<!-- RECEIVE START -->
+				<div class="row">
+					<label class="col-2">수취국가:</label>
+					<div class="col-6">
+						<select class="form-select form-select-lg" id="currencySelected" onchange="getExRate()">
+							<option value="KRW" data-currencies="KRW" selected="selected">한국(KRW)</option>
+							<option value="JPY" data-currencies="JPY">일본(JPY)</option>
+							<option value="PHP" data-currencies="PHP">필리핀(PHP)</option>
+						</select>
+					</div>
+				</div>
+				<!-- RECEIVE END -->
+
+				<!-- EX-RATE START-->
+				<div class="group row">
+					<label class="col-2">환율:</label>
+					<div class="col-6" id="ex-rate-div">
+
+					</div>
+				</div>
+				<!-- EX-RATE END-->
+
+				<!-- TRANS AMOUNT START-->
+				<div class="row">
+					<label class="col-2">송금액:</label>
+					<input class="col-3" type="number" id="transAmount"/>
+					<div class="col-2" id="currencyNm">USD</div>
+				</div>
+				<!-- TRANS AMOUNT END-->
+
+				<!-- BTN START-->
+				<div class="form-group row">
+					<button class="btn btn-dark btn-lg" onclick="calculate()">submit</button>
+				</div>
+				<!-- BTN END-->
+
+				<!-- RESULT START-->
+				<div class="form-group row">
+					<div class="col-6 rst-div" id="resultMsg"></div>
+				</div>
+				<!-- RESULT END-->
+
+				<!-- RESULT START-->
+				<div class="form-group row">
+					<div class="col-6 err-div" id="errMsg"></div>
+				</div>
+				<!-- RESULT END-->
 			</div>
 		</div>
 	</div>
@@ -20,34 +102,93 @@
 	<script th:src="@{/assets/js/bootstrap.min.js}"></script>
 	<script type="text/javascript">
 
+		/* 결과 도출 메세지 앞뒤값 */
+		const RST_MSG_BEFORE = '수취금액은 ';
+		const RST_MSG_AFTER = ' 입니다.';
+		const ERR_MSG_NOT_VALID_NUM = '송금액이 바르지 않습니다';
+
 		$(document).ready(function() {
-
-			// Get the input field
-			var user_id_ = document.querySelector('#loginId_');
-			var user_pswd_ = document.querySelector('#loginPw_');
-
-			// Execute a function when the user releases a key on the keyboard
-			user_id_.addEventListener('keyup', function(event) {
-			// Number 13 is the "Enter" key on the keyboard
-				if (event.keyCode === 13 && user_id_.value.length > 0) {
-					// Cancel the default action, if needed
-					event.preventDefault();
-					// Trigger the button element with a click
-					chkUserFirst();
-				}
-			});
-
-			user_pswd_.addEventListener('keyup', function(event) {
-				// Number 13 is the "Enter" key on the keyboard
-				if (event.keyCode === 13 && user_id_.value.length > 0) {
-					// Cancel the default action, if needed
-					event.preventDefault();
-					// Trigger the button element with a click
-					chkUserFirst();
-				}
-			});
+			getExRate();
 		});
 
+		/**
+		 * ajax로 실시간 환율 불러오기
+		 * sourceNm		송금국가
+		 * currencyNm	수취국가
+		 */
+		function getExRate(){
+			const sourceNm = document.getElementById('sourceSelected').value;
+			const currencyNm = document.getElementById('currencySelected').value;
+
+			document.getElementById('currencyNm').innerHTML = sourceNm;
+
+			$.ajax({
+				type : "GET",
+				url : "[[ @{/ex-rate} ]]" + '?source=' + sourceNm + '&currency=' + currencyNm,
+				success : function(data) {
+					if(data.success == true){
+						console.log(data);
+						$('.err-div').hide();
+						$('.rst-div').hide();
+						document.getElementById('ex-rate-div').innerHTML = data.result + ' ' + currencyNm + '/' + sourceNm;
+					}else{
+						document.getElementById('errMsg').innerHTML = data.message;
+						$('.rst-div').hide()
+						$('.err-div').show();
+					}
+					return data;
+				},
+			});
+		}
+
+		/**
+		 * 현재 설정된 환율 정보와 숫자를 통해 송금되는 금액 산출
+		 */
+		function calculate(){
+			var target = document.getElementById('transAmount').value;
+			/* 금액 산출 이전에 송금액이 잘 못됐는지 여부 체크 */
+			if(!chkValidNum(target)){
+				$('.err-div').show();
+				document.getElementById('errMsg').innerHTML = ERR_MSG_NOT_VALID_NUM;
+				return;
+			}
+			const sourceNm = document.getElementById('sourceSelected').value;
+			const currencyNm = document.getElementById('currencySelected').value;
+
+			document.getElementById('currencyNm').innerHTML = sourceNm;
+
+			$.ajax({
+				type : "GET",
+				url : "[[ @{/calculate-ex-rate} ]]" + '?source=' + sourceNm + '&currency=' + currencyNm + '&amount=' + target,
+				success : function(data) {
+					if(data.success == true){
+						console.log(data);
+						$('.err-div').hide();
+						$('.rst-div').show();
+						document.getElementById('ex-rate-div').innerHTML = data.rate + ' ' + currencyNm + '/' + sourceNm;
+						document.getElementById('resultMsg').innerHTML = RST_MSG_BEFORE + data.result + ' ' + currencyNm + RST_MSG_AFTER;
+					}else{
+						document.getElementById('errMsg').innerHTML = data.message;
+						$('.err-div').show();
+						$('.rst-div').hide()
+					}
+					return data;
+				},
+			});
+		}
+
+		/**
+		 * 입력한 값이 유효한지 여부
+		 * @param target
+		 * @returns {boolean}
+		 */
+		function chkValidNum(target){
+			let isValid = false;
+			if($.isNumeric(target) && target > 0 && target <=10000){
+				isValid = true;
+			}
+			return isValid;
+		}
     </script>
 </th:block>
 </html>
